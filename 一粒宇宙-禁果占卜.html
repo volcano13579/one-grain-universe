@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>午夜禁果占卜</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;600&family=Noto+Sans+SC:wght@300;400&display=swap');
+
+    :root {
+        --bg-color: #0f0a0a; 
+        --apple-red: #5e0b0b; 
+        --gold-accent: #c5a059; 
+        --text-main: #d1c7c7;
+        --box-bg: #1a1414;
+        --border-color: #3d2a2a;
+        --font-serif: 'Noto Serif SC', serif;
+        --font-sans: 'Noto Sans SC', sans-serif;
+    }
+
+    /* 增强版全屏水印背景层 */
+    body::before {
+        content: "在下一个宇宙我们仍然相爱";
+        position: fixed;
+        top: -50%; left: -50%; width: 200%; height: 200%;
+        z-index: 0;
+        pointer-events: none;
+        font-size: 16px;
+        color: rgba(197, 160, 89, 0.12);
+        transform: rotate(-25deg);
+        display: flex;
+        flex-wrap: wrap;
+        line-height: 150px;
+        letter-spacing: 15px;
+        overflow: hidden;
+        justify-content: space-around;
+        align-content: space-around;
+    }
+
+
+    body {
+        background: radial-gradient(circle at center, var(--apple-red) 0%, var(--bg-color) 100%);
+        color: var(--text-main);
+        margin: 0; padding: 0;
+        font-family: var(--font-serif);
+        display: flex; flex-direction: column; align-items: center;
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        position: relative;
+    }
+
+    #overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #000; z-index: 9999; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; transition: opacity 1.5s;
+    }
+    .apple-logo {
+        width: 80px; height: 80px; background: var(--apple-red);
+        border-radius: 50% 50% 45% 45%; box-shadow: 0 0 30px var(--apple-red);
+        cursor: pointer; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+
+    .header { text-align: center; padding: 60px 20px 30px; position: relative; z-index: 10; }
+    .header h1 { 
+        font-size: 32px; letter-spacing: 8px; margin: 0; 
+        color: var(--gold-accent); text-shadow: 0 0 15px rgba(197, 160, 89, 0.4);
+        font-weight: 600;
+        font-family: var(--font-serif);
+    }
+    #sub-title { font-family: var(--font-sans); font-size: 13px; opacity: 0.6; margin-top: 4px; letter-spacing: 2px;margin-bottom: -10px; }
+
+    .page-section { display: none; width: 92%; max-width: 600px; margin-bottom: 40px; position: relative; z-index: 10; }
+    .active { display: block; animation: fadeIn 0.8s ease; }
+    /* 逐字浮现的容器样式 */
+    .fade-text-container {
+        color: var(--gold-accent);
+        margin-bottom: 50px;
+        font-size: 15px;
+        line-height: 2; /* 增加行间距，让两行字更有呼吸感 */
+        letter-spacing: 3px;
+    }
+
+    /* 每一个字的动画基础设置 */
+    .char {
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(5px);
+        animation: charFadeIn 0.5s ease forwards;
+    }
+
+    /* 动画效果：从模糊到清晰，从下方微微升起 */
+    @keyframes charFadeIn {
+        to {
+            opacity: 0.8;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+}
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  
+/* 问题容器：决定所有问题怎么排队 */
+.question-list {
+   display: flex;
+    flex-wrap: wrap;       /* 布局模式：允许换行（这是做双列的关键） */
+    justify-content: center; /* 对齐方式：所有气泡在正中间集合 */
+    gap: 10px;             /* 间距：上下左右两个气泡之间的缝隙 */
+    padding: 10px 5px;     /* 整体边距：给左右两边留一点点空隙 */
+}
+
+/* 问题气泡：决定单个选项的长相 */
+.question-item {
+    font-family: var(--font-serif); /* 字体：使用你设定的宋体 */
+    background: rgba(255, 255, 255, 0.05); /* 底色：半透明的星空黑 */
+    border: 1px solid rgba(197, 160, 89, 0.3); /* 边框：淡淡的金色线条 */
+    border-radius: 20px;    /* 圆角：决定气泡是方还是圆 */
+    padding: 10px 12px;    /* 气泡高度与内宽：15是上下高度，20是左右宽度 */
+    
+    width: 44%;            /* 气泡宽度：占手机屏幕宽度的比例 */
+    text-align: center;    /* 文字位置：文字在气泡里水平居中 */
+    font-size: 13px;       /* 字号：气泡里问题文字的大小 */
+    transition: all 0.3s;  /* 动画过渡：点击变色时的平滑度 */
+    box-sizing: border-box; /* 辅助属性：确保边框不撑破宽度 */
+}
+
+
+/* 选中状态：发光效果 */
+.question-item.selected {
+    background: var(--gold-accent);
+    color: #000;
+    box-shadow: 0 0 20px rgba(157, 120, 50, 0.6);
+    transform: scale(1.05);
+}
+
+    .draw-area { position: relative; height: 300px; margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
+    .card-fan { position: relative; width: 100%; height: 160px; display: flex; justify-content: center; cursor: pointer; }
+    
+    .shuffling { animation: breath 3s ease-in-out infinite; }
+    @keyframes breath {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.03); filter: brightness(1.3); }
+    }
+    
+    .fan-card-deco {
+        position: absolute; width: 70px; height: 110px;
+        background: var(--apple-red); border: 1.5px solid var(--gold-accent); border-radius: 5px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 0.3s;
+    }
+    .fan-card-main { z-index: 10; transform: translateY(10px); background: var(--gold-accent); display: flex; align-items: center; justify-content: center; color: #000; font-size: 13px; font-weight: bold; }
+/* 让卡牌在移动、变色时，都有一个 0.8 秒的丝滑过程 */
+.card-slot, .fan-card-deco {
+    transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+    .slot-container { display: flex; justify-content: center; gap: 12px; margin-top: 40px; }
+    .card-slot {
+        width: 60px; height: 90px; border: 1px dashed var(--gold-accent); border-radius: 6px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 11px; color: var(--gold-accent); opacity: 0.5; transition: all 0.3s;
+    }
+    .card-slot.filled { border: 1px solid var(--gold-accent); background: rgba(197, 160, 89, 0.2); opacity: 1; }
+
+    .result-cards-display { display: flex; justify-content: space-around; margin: 20px 0;margin-bottom: 40px; gap: 8px; }
+    .card-box { text-align: center; width: 30%; transition: all 0.5s; }
+    .card-img { width: 90%; border-radius: 5px; border: 2px solid var(--gold-accent); box-shadow: 0 5px 15px rgba(0,0,0,0.4); margin-bottom: 8px; transition: transform 0.6s; }
+    .interpretation-box { background: rgba(25, 18, 18, 0.85); backdrop-filter: blur(5px); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color); }
+    /* 问题回声的气泡样式 */
+    .question-echo {
+         font-weight: bold;
+        text-align: center;
+        color: var(--gold-accent);
+        margin-bottom: 30px;
+        padding: 12px 20px;
+        background: rgba(94, 11, 11, 0.2); /* 淡淡的苹果红底色 */
+        border: 1px solid rgba(197, 160, 89, 0.3); /* 金色半透明边框 */
+        border-radius: 50px; /* 圆角气泡感 */
+        display: inline-block; /* 宽度随文字走 */
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%); /* 居中对齐 */
+        font-size: 15px;
+        letter-spacing: 1.6px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* 增加一点深度 */
+    }
+
+    /* 在问题前面加个小图标增强仪式感 */
+    .question-echo::before {
+        content: "◈";
+        margin-right: 8px;
+        opacity: 0.7;
+}
+    .interp-item { margin-bottom: 18px; border-left: 4cap solid var(--gold-accent); padding-left: 12px; }
+    .interp-title { font-weight: bold; margin-bottom: 8px; color: var(--gold-accent); font-size:17px;letter-spacing: 2px }
+    .interp-text { 
+        font-family: var(--font-serif);
+        font-size: 14px; line-height: 1.8; color: var(--text-main); 
+        opacity: 0; transform: translateY(10px); transition: all 1s; text-align: justify; 
+    }
+    .interp-text.show { opacity: 0.8; transform: translateY(0); }
+
+    .btn { 
+        background: transparent; color: var(--gold-accent); border: 1px solid var(--gold-accent); 
+        padding: 12px 40px; border-radius: 2px; cursor: pointer; margin: 25px auto; font-size: 15px; display: block;
+        transition: all 0.3s; letter-spacing: 2px; position: relative; z-index: 20;
+    }
+    .btn:hover { background: var(--gold-accent); color: #000; }
+
+    #preloader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--bg-color); z-index: 1000;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.5s;
+    }
+    .loading-orbit {
+        width: 60px; height: 60px; border: 1px solid var(--gold-accent);
+        border-radius: 50%; position: relative; animation: rotate 3s linear infinite;
+    }
+    .loading-orbit::after {
+        content: ''; position: absolute; top: -5px; left: 50%; 
+        width: 10px; height: 10px; background: var(--gold-accent); border-radius: 50%;
+        box-shadow: 0 0 15px var(--gold-accent);
+    }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .draw-area { position: relative; height: 320px; margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
+    .card-fan { position: relative; width: 100%; height: 160px; display: flex; justify-content: center; cursor: pointer; }
+    .shuffling { animation: breath 3s ease-in-out infinite; }
+    @keyframes breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+/* 第三步解读牌弹出速度 */
+.card-box { 
+    text-align: center; 
+    width: 30%; 
+    animation: fadeInUp 5s ease forwards; /* 1.2秒慢慢升起 */
+}
+
+/* 解读文字之间间距 */
+.interp-item { 
+    margin-bottom: 50px; /* 这里从18px改成了45px，间距直接翻倍 */
+    border-left: 2px solid var(--gold-accent); 
+    padding-left: 18px; 
+}
+
+/* 解读文字的间距 */
+.interp-text { 
+    font-size: 15px; 
+    line-height: 2.2; /* 增加行间距 */
+    letter-spacing: 1px; /* 增加字间距 */
+}
+    </style>
+</head>
+<body>
+
+    <div id="preloader">
+        <div class="loading-orbit"></div>
+        <p id="loader-text" style="margin-top:25px; color:var(--gold-accent); font-size:13px; letter-spacing:2px;">正在建立宇宙连接...</p>
+    </div>
+
+    <div id="overlay" onclick="startExperience()">
+        <div class="apple-logo"></div>
+        <p style="margin-top: 20px; color: var(--gold-accent); letter-spacing: 3px; font-size: 14px;">点击禁果，开始与TA的连接</p>
+    </div>
+
+    <div class="header">
+        <h1>禁果占卜</h1>
+        <p id="sub-title">愿此间感应，指引你找到答案</p>
+    </div>
+
+    <div id="step1" class="page-section active">
+        <p style="text-align:center; font-size: 20px; margin-bottom: 25px; opacity: 0.6;">— 选择你要探索的真相 —</p>
+        <div class="question-list" id="qGrid"></div>
+        <button id="startBtn" class="btn" style="display:none; margin-top:40px;" onclick="goToStep2()">开启仪式</button>
+    </div>
+
+  <div id="loading-page" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f0a0a; z-index: 9998; flex-direction: column; align-items: center; justify-content: center;">
+    <div class="loader-circle"></div>
+    <p style="margin-top: 30px; color: #c5a059; letter-spacing: 5px; font-size: 13px; animation: blink 1.5s infinite;">正在建立宇宙连接...</p>
+</div>
+
+    <div id="step2" class="page-section" style="text-align: center;">
+     <div class="fade-text-container" id="guideText">
+        <div id="line1" style="margin-bottom: 8px;"></div> <div id="line2"></div> </div>
+            <div class="card-fan" onclick="drawOneCard()">
+                <div class="fan-card-deco" style="transform: rotate(-30deg) translateX(-50px);"></div>
+                <div class="fan-card-deco" style="transform: rotate(-15deg) translateX(-25px);"></div>
+                <div class="fan-card-deco fan-card-main">抽牌</div>
+                <div class="fan-card-deco" style="transform: rotate(15deg) translateX(25px);"></div>
+                <div class="fan-card-deco" style="transform: rotate(30deg) translateX(50px);"></div>
+            </div>
+            <div class="slot-container">
+                <div class="card-slot" id="slot0"><span></span><small>果核</small></div>
+                <div class="card-slot" id="slot1"><span></span><small>诱引</small></div>
+                <div class="card-slot" id="slot2"><span></span><small>吞噬</small></div>
+            </div>
+        <p style="margin-top:25px; font-size: 12px; opacity: 0.5;">已感应: <span id="count" style="color:var(--gold-accent);">0</span> / 3</p>
+    </div>
+
+   <div id="step3" class="page-section">
+    <div id="questionEcho" class="question-echo"></div> 
+    
+    <div id="resultCards" class="result-cards-display"></div>
+    <div id="interpretation" class="interpretation-box"></div>
+    <button class="btn" onclick="location.reload()" style="margin-top:30px;">再次探索</button>
+</div>
+
+<script>
+document['\u006F\u006E\u0063\u006F\u006E\u0074\u0065\u0078\u0074\u006D\u0065\u006E\u0075']=()=>{return false;};document['\u006F\u006E\u006B\u0065\u0079\u0064\u006F\u0077\u006E']=e=>{if(e['\u006B\u0065\u0079\u0043\u006F\u0064\u0065']===(365593^365666))return false;};var _0xd18de=(408786^408787)+(376377^376378);const tarotData=[{"name":"愚者","pos":"\u0054\u0041\u5BF9\u4F60\u5145\u6EE1\u4E86\u597D\u611F\u4E0E\u597D\u5947\uFF0C\u8FD9\u79CD\u6BEB\u65E0\u9632\u5907\u7684\u8D64\u5B50\u4E4B\u5FC3\uFF0C\u8BA9\u4ECA\u665A\u7684\u6C1B\u56F4\u53D8\u5F97\u975E\u5E38\u8F7B\u677E\u6109\u5FEB\u3002\u0054\u0041\u613F\u610F\u966A\u4F60\u5C1D\u8BD5\u4EFB\u4F55\u65B0\u9C9C\u7684\u4E8B\u7269\uFF0C\u54EA\u6015\u7A0D\u5FAE\u201C\u51FA\u683C\u201D\uFF0C\u4E5F\u662F\u4E13\u5C5E\u4E8E\u4F60\u4EEC\u7684\u6D6A\u6F2B\u5192\u9669\u3002",'\u006E\u0065\u0067':"\u0054\u0041\u50CF\u53EA\u6025\u7740\u8BA8\u597D\u4F60\u7684\u5C0F\u72D7\uFF0C\u5168\u7136\u987E\u4E0D\u4E0A\u4EC0\u4E48\u8282\u594F\u548C\u7AE0\u6CD5\u3002\u90A3\u4E9B\u6BDB\u624B\u6BDB\u811A\u7684\u8BD5\u63A2\u91CC\u5168\u662F\u85CF\u4E0D\u4F4F\u7684\u6025\u5207\uFF0C\u54EA\u6015\u524D\u8FDB\u7684\u6B65\u5B50\u78D5\u78D5\u7ECA\u7ECA\uFF0C\u4E5F\u8981\u5598\u7740\u6C14\u3001\u7EA2\u7740\u773C\u54AC\u4E0B\u8FD9\u4E00\u53E3\u3002\u0054\u0041\u6839\u672C\u6CA1\u60F3\u8FC7\u9000\u8DEF\uFF0C\u53EA\u60F3\u5728\u8FD9\u573A\u6A2A\u51B2\u76F4\u649E\u7684\u63A2\u7D22\u91CC\uFF0C\u628A\u6240\u6709\u7684\u8D64\u8BDA\u548C\u8FF7\u4E71\u90FD\u585E\u8FDB\u4F60\u624B\u91CC\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0064\u0036\u0031\u0031\u0036\u0038\u0033\u0066\u0035\u0031\u0033\u0065\u0030\u0039\u0036\u0031\u0062\u0062\u0066\u0063\u0061\u0030\u0039\u0066\u0066\u0031\u0065\u0034\u0065\u0039\u0037\u0061\u002F\u0030\u005F\u0046\u006F\u006F\u006C\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u9B54\u672F\u5E08",'\u0070\u006F\u0073':"今晚的主动权完全在TA手中，TA像个熟练的艺术家，能精准捕捉到你的每一个感官反馈。你会发现氛围被TA营造得极具张力，各种层出不穷的小花样和温柔话语，会让你心甘情愿地坠入TA布置的甜蜜陷阱。",'\u006E\u0065\u0067':"\u0054\u0041\u60F3\u8981\u628A\u6240\u6709\u7684\u611F\u5B98\u6280\u5DE7\u90FD\u7FFB\u4E2A\u82B1\u6837\u5448\u73B0\u7ED9\u4F60\uFF0C\u524D\u8FDB\u7684\u52A8\u4F5C\u91CC\u5E26\u7740\u63A9\u9970\u4E0D\u4F4F\u7684\u8BA8\u597D\u3002\u0054\u0041\u5728\u7528\u8FD9\u79CD\u8FD1\u4E4E\u6267\u7740\u7684\u5C55\u793A\uFF0C\u60F3\u770B\u4F60\u4E3A\u0054\u0041\u610F\u4E71\u60C5\u8FF7\uFF0C\u60F3\u786E\u8BA4\u81EA\u5DF1\u4F9D\u7136\u80FD\u8BA9\u4F60\u77AC\u95F4\u7F34\u68B0\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0062\u0039\u0039\u0031\u0038\u0061\u0061\u0063\u0063\u0064\u0065\u0066\u0038\u0062\u0033\u0062\u0065\u0032\u0039\u0038\u0033\u0064\u0036\u0030\u0036\u0037\u0030\u0034\u0065\u0035\u0066\u0038\u002F\u0030\u0031\u005F\u004D\u0061\u0067\u0069\u0063\u0069\u0061\u006E\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u5973\u6559\u7687",'\u0070\u006F\u0073':"\u0054\u0041\u559C\u6B22\u7981\u6B32\u7684\u62C9\u626F\u611F\u3002\u8868\u9762\u4E0A\u0054\u0041\u6CE2\u6F9C\u4E0D\u60CA\uFF0C\u5B9E\u9645\u4E0A\u5185\u5FC3\u5DF2\u7ECF\u4E3A\u4F60\u51C6\u5907\u4E86\u4E00\u573A\u9759\u8C27\u800C\u6DF1\u9083\u7684\u76DB\u5BB4\u3002\u8FD9\u79CD\u82E5\u5373\u82E5\u79BB\u7684\u4E92\u52A8\uFF0C\u53CD\u800C\u4F1A\u6FC0\u53D1\u51FA\u4E00\u79CD\u66F4\u9AD8\u7EA7\u3001\u66F4\u7EC6\u817B\u7684\u6109\u60A6\uFF0C\u8BA9\u7075\u9B42\u4E0E\u8EAB\u4F53\u540C\u65F6\u8FBE\u5230\u5171\u632F\u3002","neg":"TA想要让你感到绝对的私密与安全，所以克制地退让，在极慢的节奏里慢慢释放自己的温度。TA在为你烧着一团闷火，只想把反差最大的那一面留给你品尝，让每一寸侵入都带上禁忌的余韵。","img":"https://p.sda1.dev/30/0b46f889b8f892822740cbc01872b13a/02_High_Priestess.jpg"},{'\u006E\u0061\u006D\u0065':"\u7687\u540E",'\u0070\u006F\u0073':"\u0054\u0041\u5BF9\u4F60\u7684\u6E34\u671B\u662F\u5168\u65B9\u4F4D\u7684\uFF0C\u8FD9\u79CD\u7231\u610F\u65E2\u5305\u542B\u611F\u5B98\u7684\u6EE1\u8DB3\uFF0C\u4E5F\u5305\u542B\u7CBE\u795E\u7684\u5BA0\u6EBA\u3002\u5728\u0054\u0041\u773C\u91CC\uFF0C\u4F60\u5C31\u662F\u4ECA\u665A\u552F\u4E00\u7684\u7126\u70B9\u3002\u0054\u0041\u4F1A\u7528\u6781\u5EA6\u7684\u6E29\u67D4\u5305\u56F4\u4F60\uFF0C\u8BA9\u4F60\u611F\u53D7\u5230\u4E00\u79CD\u524D\u6240\u672A\u6709\u7684\u88AB\u5475\u62A4\u611F\u548C\u4E30\u76C8\u7684\u751F\u547D\u529B\u3002",'\u006E\u0065\u0067':"\u0054\u0041\u60F3\u628A\u6240\u6709\u7684\u611F\u5B98\u5BA0\u6EBA\u4E00\u80A1\u8111\u5168\u585E\u7ED9\u4F60\uFF0C\u751F\u6015\u7ED9\u5F97\u4E0D\u591F\u6DF1\u3002\u90A3\u4E9B\u6709\u4E9B\u7A92\u606F\u7684\u5305\u88F9\u611F\uFF0C\u662F\u0054\u0041\u5728\u8BD5\u56FE\u7528\u6E29\u5EA6\u586B\u6EE1\u4E24\u4EBA\u7684\u6BCF\u4E00\u5BF8\u7F1D\u9699\u3002\u53EA\u8981\u4F60\u53D1\u51FA\u4E00\u58F0\u8F6F\u7EF5\u7684\u5598\u606F\uFF0C\u0054\u0041\u7684\u4E16\u754C\u5C31\u4F1A\u77AC\u95F4\u4E3A\u4F60\u6EE1\u6EA2\u3002",'\u0069\u006D\u0067':"https://p.sda1.dev/30/86c04ace19a35ce2b939b9b366d81f04/03_Empress.jpg"},{'\u006E\u0061\u006D\u0065':"\u7687\u5E1D","pos":"强有力的掌控，充满荷尔蒙的压迫感。TA享受那种将你完全裹在怀里的感觉，节奏虽然强势，却仍然在细节处体现对你的在意，这让你体会到很强的安全感。在TA面前，你只需要放松地做一个被宠爱的公主。","neg":"\u0054\u0041\u7528\u5F3A\u786C\u7684\u529B\u9053\u6491\u8D77\u638C\u63A7\u7684\u59FF\u6001\uFF0C\u60F3\u8868\u73B0\u51FA\u503C\u5F97\u4F60\u4F9D\u9760\u7684\u6A21\u6837\u3002\u0054\u0041\u5728\u7B28\u62D9\u5730\u5E73\u8861\u7740\u5185\u5FC3\u7684\u4F9D\u8D56\u611F\uFF0C\u53EA\u8981\u4F60\u987A\u4ECE\u5730\u8D34\u8FD1\uFF0C\u0054\u0041\u6240\u6709\u7684\u7D27\u7EF7\u548C\u90A3\u80A1\u751F\u786C\u7684\u52B2\u5934\uFF0C\u90FD\u4F1A\u5728\u4F60\u6000\u91CC\u5F7B\u5E95\u74E6\u89E3\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0031\u0063\u0066\u0064\u0031\u0036\u0064\u0036\u0065\u0065\u0031\u0030\u0030\u0031\u0061\u0031\u0063\u0036\u0033\u0031\u0063\u0031\u0033\u0066\u0066\u0034\u0065\u0034\u0038\u0037\u0039\u0062\u002F\u0030\u0034\u005F\u0045\u006D\u0070\u0065\u0072\u006F\u0072\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"教皇",'\u0070\u006F\u0073':"TA更倾向于有仪式感的相处。在TA看来，每一次亲密都是神圣的承诺。今晚的节奏会非常稳重且得体，TA会非常尊重你的感受，确保在每一个细节上都能让你感到被尊重和珍视。",'\u006E\u0065\u0067':"TA固守着那些传统的温柔套路，动作都在安全的航道上缓慢游走。TA在用这种厚重的诚意，去换取你们在这场欢愉里最长久的稳定。这种看似保守的节奏，是TA在确保每一秒触碰都能给到你最扎实的交代。",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0038\u0032\u0037\u0038\u0037\u0039\u0039\u0035\u0030\u0035\u0036\u0065\u0032\u0061\u0063\u0063\u0034\u0064\u0031\u0066\u0034\u0030\u0066\u0035\u0032\u0037\u0066\u0038\u0033\u0032\u0030\u0065\u002F\u0030\u0035\u005F\u0048\u0069\u0065\u0072\u006F\u0070\u0068\u0061\u006E\u0074\u002E\u006A\u0070\u0067"},{"name":"\u604B\u4EBA","pos":"\u5929\u9020\u5730\u8BBE\u7684\u5951\u5408\u611F\u3002\u4F60\u4EEC\u4E4B\u95F4\u7684\u80FD\u91CF\u6D41\u52A8\u6781\u5176\u987A\u7545\uFF0C\u4E00\u4E2A\u773C\u795E\u5C31\u80FD\u660E\u767D\u5F7C\u6B64\u7684\u6E34\u6C42\u3002\u4ECA\u665A\u4E0D\u4EC5\u662F\u8EAB\u4F53\u7684\u878D\u5408\uFF0C\u66F4\u662F\u7075\u9B42\u7684\u6DF1\u5EA6\u5BF9\u8BDD\uFF0C\u8FD9\u79CD\u5982\u521D\u604B\u822C\u60B8\u52A8\u7684\u7F8E\u597D\u5C06\u4F34\u968F\u4F60\u4EEC\u4E00\u6574\u665A\u3002","neg":"TA在权衡每一个能让你更快乐的可能，反复确认你每一寸细微的颤动。哪怕只是暂时停下来安静地拥抱，也是TA在脑海里反复预演过无数次的深情，TA要尽可能延续这场品尝的美妙。",'\u0069\u006D\u0067':"https://p.sda1.dev/30/438a74c07c461eff6a354cd70022b789/06_Lovers.jpg"},{'\u006E\u0061\u006D\u0065':"战车",'\u0070\u006F\u0073':"今晚的节奏将是一路狂飙。TA对你的渴望已经满溢，迫不及待地想要向你展示TA的力量与速度。在充满激情的冲刺中，你会体验到一种极致的快节奏，让心跳瞬间飙升至顶点。","neg":"TA内心的渴求快要冲破闸门，深入的动作里带着一股野性的冲撞。这失控的爆发力，是TA被你深度吸引后最原始的本能反应。TA要把你整个人都揉进这种蛮横的节奏里，确认你是在TA生命里那个切实且特别的存在。",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0065\u0062\u0030\u0036\u0038\u0064\u0061\u0033\u0062\u0035\u0065\u0065\u0063\u0030\u0066\u0037\u0038\u0031\u0061\u0037\u0037\u0039\u0065\u0031\u0030\u0064\u0033\u0061\u0036\u0032\u0037\u0039\u002F\u0030\u0037\u005F\u0043\u0068\u0061\u0072\u0069\u006F\u0074\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u529B\u91CF","pos":"\u4EE5\u67D4\u514B\u521A\u7684\u5DC5\u5CF0\u3002\u0054\u0041\u61C2\u5F97\u5982\u4F55\u7CBE\u51C6\u5730\u63A7\u5236\u529B\u9053\uFF0C\u5728\u6E29\u67D4\u4E0E\u575A\u97E7\u4E4B\u95F4\u6E38\u5203\u6709\u4F59\u3002\u4F60\u88AB\u4E00\u79CD\u5F3A\u5927\u7684\u78C1\u573A\u5438\u5F15\uFF0C\u5FC3\u7518\u60C5\u613F\u5730\u4EA4\u51FA\u4E3B\u5BFC\u6743\uFF0C\u4EAB\u53D7\u8FD9\u79CD\u88AB\u5B8C\u5168\u5F81\u670D\u4E14\u6781\u5176\u8212\u9002\u7684\u611F\u89C9\u3002","neg":"\u0054\u0041\u6B7B\u6B7B\u6309\u637A\u7740\u5185\u5FC3\u7684\u517D\u6027\uFF0C\u53EA\u60F3\u5C55\u73B0\u51FA\u6700\u80FD\u8BA9\u4F60\u63A5\u53D7\u7684\u6E29\u67D4\u3002\u6781\u5EA6\u7684\u9690\u5FCD\uFF0C\u53EA\u56E0\u0054\u0041\u820D\u4E0D\u5F97\u8BA9\u4F60\u611F\u5230\u534A\u5206\u88AB\u63A0\u593A\u800C\u4E0D\u8212\u670D\u7684\u53EF\u80FD\u3002\u800C\u5F53\u8FD9\u80A1\u529B\u91CF\u7EC8\u4E8E\u677E\u52A8\uFF0C\u538B\u6291\u8BB8\u4E45\uFF0C\u55B7\u8584\u800C\u51FA\u7684\u5F20\u529B\u4F1A\u77AC\u95F4\u628A\u4F60\u6DF9\u6CA1\u3002","img":"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0062\u0038\u0063\u0039\u0061\u0036\u0032\u0065\u0063\u0064\u0030\u0064\u0062\u0033\u0030\u0066\u0035\u0030\u0061\u0036\u0065\u0038\u0066\u0031\u0064\u0065\u0066\u0035\u0061\u0061\u0061\u0035\u002F\u0030\u0038\u005F\u0053\u0074\u0072\u0065\u006E\u0067\u0074\u0068\u002E\u006A\u0070\u0067"},{"name":"\u9690\u58EB",'\u0070\u006F\u0073':"TA享受只属于你们两个人的静谧时光。没有喧嚣，只有呼吸与体温的交换。慢工出细活的节奏，让你们在极其细微的触碰中感受到巨大的快乐，这是一种精神层面的深度高潮。","neg":"\u0054\u0041\u6536\u655B\u8D77\u6240\u6709\u7684\u950B\u8292\uFF0C\u5728\u9759\u8C27\u7684\u89D2\u843D\u91CC\uFF0C\u53CD\u590D\u63CF\u6479\u8D70\u5411\u4F60\u7684\u6BCF\u4E00\u6B65\u3002\u0054\u0041\u60F3\u8981\u5728\u76F8\u5904\u65F6\uFF0C\u8BA9\u4F60\u611F\u5230\u7EDD\u5BF9\u7684\u8212\u670D\uFF0C\u6240\u4EE5\u514B\u5236\u5730\u9000\u8BA9\u3002\u0054\u0041\u5728\u7528\u547C\u5438\u9891\u7387\u8D34\u5408\u4F60\u7684\u8282\u594F\uFF0C\u6BCF\u4E00\u70B9\u5B89\u9759\u90FD\u5199\u6EE1\u4E86\u6DF1\u85CF\u4E0D\u9732\u7684\u5728\u610F\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0063\u0039\u0064\u0062\u0063\u0063\u0032\u0030\u0065\u0034\u0063\u0033\u0032\u0064\u0033\u0064\u0034\u0039\u0064\u0030\u0063\u0061\u0038\u0064\u0061\u0037\u0030\u0035\u0031\u0039\u0032\u0063\u002F\u0030\u0039\u005F\u0048\u0065\u0072\u006D\u0069\u0074\u002E\u006A\u0070\u0067"},{"name":"命运之轮",'\u0070\u006F\u0073':"一切都像是命中注定，今晚你们会遇到一些意想不到的惊喜转折。这些小意外会让氛围变得格外刺激，你们会一起探索未知的快感领域，感受到缘分的奇妙与更紧密的关系。",'\u006E\u0065\u0067':"TA在应对那些不按计划出牌的瞬间，想在混乱的变换中抓稳你的手。这些突如其来的插曲，是TA想和你共同跨越的试炼。手忙脚乱的互动中，属于你们间的独家记忆被刻下，再被未来的你们笑着提起。","img":"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0039\u0030\u0032\u0036\u0061\u0038\u0064\u0063\u0066\u0035\u0063\u0038\u0033\u0063\u0038\u0065\u0061\u0035\u0066\u0038\u0035\u0062\u0064\u0031\u0061\u0035\u0036\u0066\u0032\u0033\u0064\u0064\u002F\u0031\u0030\u005F\u0057\u0068\u0065\u0065\u006C\u005F\u006F\u0066\u005F\u0046\u006F\u0072\u0074\u0075\u006E\u0065\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u6B63\u4E49",'\u0070\u006F\u0073':"\u4E00\u79CD\u6781\u81F4\u7684\u5E73\u8861\u7F8E\u3002\u0054\u0041\u975E\u5E38\u5728\u610F\u4F60\u7684\u56DE\u9988\uFF0C\u4F60\u7ED9\u4E88\u4E00\u4EFD\u70ED\u60C5\uFF0C\u0054\u0041\u5FC5\u5B9A\u52A0\u500D\u8FD4\u8FD8\u3002\u52BF\u5747\u529B\u654C\u7684\u4E92\u52A8\u8BA9\u6BCF\u4E00\u6B21\u63A5\u89E6\u90FD\u5F88\u8212\u9002\uFF0C\u4F60\u4EEC\u5728\u4E92\u76F8\u535A\u5F08\u4E2D\u627E\u5230\u4E86\u6700\u5951\u5408\u7684\u90A3\u4E2A\u9891\u7387\u3002",'\u006E\u0065\u0067':"\u0054\u0041\u53CD\u590D\u786E\u8BA4\u4F60\u7684\u6BCF\u4E00\u4E2A\u7EC6\u5FAE\u53CD\u5E94\uFF0C\u5BB3\u6015\u7ED9\u4F60\u7684\u529B\u9053\u91CD\u4E86\u6216\u8005\u8F7B\u4E86\u3002\u0054\u0041\u5728\u7528\u8FD9\u79CD\u8FD1\u4E4E\u504F\u6267\u7684\u7EC6\u81F4\u53BB\u6362\u53D6\u4F60\u6700\u6781\u81F4\u7684\u4F53\u9A8C\u3002\u0054\u0041\u8981\u628A\u6240\u6709\u7684\u8282\u594F\u90FD\u5BF9\u9F50\u4F60\u7684\u547C\u5438\uFF0C\u8BA9\u4F60\u611F\u53D7\u5230\u6700\u516C\u5E73\u3001\u6700\u7EAF\u7CB9\u7684\u5DC5\u5CF0\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0037\u0033\u0065\u0062\u0035\u0039\u0065\u0034\u0038\u0065\u0038\u0061\u0062\u0061\u0033\u0030\u0064\u0038\u0036\u0033\u0030\u0037\u0030\u0061\u0038\u0030\u0031\u0036\u0066\u0033\u0034\u0062\u002F\u0031\u0031\u005F\u004A\u0075\u0073\u0074\u0069\u0063\u0065\u002E\u006A\u0070\u0067"},{"name":"\u5012\u540A\u4EBA",'\u0070\u006F\u0073':"\u0054\u0041\u613F\u610F\u4E3A\u4E86\u4F60\u5C1D\u8BD5\u4EFB\u4F55\u9AD8\u96BE\u5EA6\u7684\u6311\u6218\uFF0C\u751A\u81F3\u727A\u7272\u81EA\u5DF1\u7684\u8212\u9002\u5EA6\u3002\u5168\u7136\u7684\u5949\u732E\u7CBE\u795E\uFF0C\u8BA9\u0054\u0041\u7684\u7231\u610F\u6EE1\u6EA2\u51FA\u6765\uFF0C\u4F3C\u4E4E\u4ECE\u65E0\u5F62\u53D8\u6210\u6709\u5F62\uFF0C\u8BA9\u4F60\u80FD\u76F4\u63A5\u63A5\u6536\u5230\u3002","neg":"\u0054\u0041\u5FC3\u7518\u60C5\u613F\u5730\u505C\u5728\u90A3\u4E2A\u522B\u626D\u7684\u59FF\u52BF\u4E0A\uFF0C\u53EA\u4E3A\u8BA9\u4F60\u80FD\u4F53\u4F1A\u5230\u66F4\u6781\u81F4\u7684\u5FEB\u611F\u3002\u0054\u0041\u5728\u5FCD\u53D7\u8EAB\u4F53\u7684\u9178\u9EBB\uFF0C\u773C\u795E\u5374\u59CB\u7EC8\u9501\u5728\u4F60\u5931\u795E\u7684\u8138\u4E0A\uFF0C\u65E0\u58F0\u7684\u89C6\u7EBF\uFF0C\u662F\u0054\u0041\u5728\u7528\u53E6\u4E00\u79CD\u9891\u7387\u5411\u4F60\u5F7B\u5E95\u81E3\u670D\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0031\u0037\u0036\u0038\u0032\u0035\u0038\u0030\u0061\u0033\u0064\u0061\u0037\u0037\u0065\u0034\u0036\u0033\u0038\u0063\u0032\u0062\u0038\u0031\u0034\u0032\u0030\u0036\u0066\u0030\u0032\u0033\u002F\u0031\u0032\u005F\u0048\u0061\u006E\u0067\u0065\u0064\u005F\u004D\u0061\u006E\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u6B7B\u795E","pos":"抛弃旧我的彻底爆发。今晚会是一个全新的开始，TA会带你领略一种前所未有的震撼。那些陈旧的顾虑都会消失，只剩下最本真的欲望和最纯粹的链接，让关系重获新生。",'\u006E\u0065\u0067':"\u0054\u0041\u6B7B\u6B7B\u6293\u7740\u6700\u540E\u4E00\u70B9\u7406\u667A\u4E0D\u653E\uFF0C\u6297\u62D2\u7740\u90A3\u79CD\u5FEB\u8981\u6CA1\u9876\u7684\u6C89\u6CA6\u611F\u3002\u90A3\u79CD\u8FD1\u4E4E\u7A92\u606F\u7684\u7D27\u7EF7\u611F\u6B63\u5728\u4F60\u4EEC\u4E4B\u95F4\u62C9\u626F\uFF0C\u0054\u0041\u5728\u7B49\u4E00\u4E2A\u5F7B\u5E95\u7206\u53D1\u7684\u5951\u673A\uFF0C\u53BB\u63A8\u7FFB\u6240\u6709\u7684\u65E7\u89C4\u5219\u3002\u0054\u0041\u5728\u9ED1\u6697\u91CC\u84C4\u529B\uFF0C\u51C6\u5907\u5E26\u4F60\u8FCE\u63A5\u90A3\u573A\u6BC1\u706D\u540E\u7684\u65B0\u751F\u3002","img":"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0065\u0061\u0063\u0037\u0063\u0039\u0030\u0061\u0062\u0061\u0065\u0035\u0038\u0034\u0034\u0061\u0039\u0031\u0037\u0032\u0037\u0035\u0033\u0063\u0036\u0062\u0032\u0036\u0061\u0063\u0033\u0035\u002F\u0031\u0033\u005F\u0044\u0065\u0061\u0074\u0068\u002E\u006A\u0070\u0067"},{"name":"\u8282\u5236","pos":"丝滑如丝绸般的节奏。TA能完美调和各种情绪，让热烈与温柔并存。你们之间的互动就像流动的温水，不急不躁，却能慢慢渗透进对方的心底，留下持久且深长的余韵。",'\u006E\u0065\u0067':"TA尝试着调和那些失衡的欲望，在克制与爆发之间反复横跳，弄得两人都有点心痒。那种还没能完全对齐的频率，反倒让接下来的每一寸侵入都带了点探索的刺激。TA正在寻找那个能让你瞬间失神的临界点。",'\u0069\u006D\u0067':"https://p.sda1.dev/30/932a5ca1d7414c4e5c74e9cecf72065e/14_Temperance.jpg"},{'\u006E\u0061\u006D\u0065':"恶魔",'\u0070\u006F\u0073':"不可抗拒的肉欲诱惑。今晚 TA 对你的吸引力达到了峰值，那种几乎要将你吞噬的渴望会让氛围变得异常焦灼。你会体验到一种突破禁忌的快感，沉溺在多巴胺带来的极致疯狂中。","neg":"\u5FEB\u8981\u5931\u63A7\u7684\u6B32\u671B\u88AB\u751F\u751F\u6309\u4E86\u4E0B\u53BB\u3002\u6BD4\u8D77\u4E00\u77AC\u95F4\u7684\u5BA3\u6CC4\uFF0C\u0054\u0041\u66F4\u60F3\u7ED9\u4F60\u957F\u4E45\u4E14\u6E05\u9192\u7684\u6E29\u67D4\u3002\u0054\u0041\u5728\u7406\u667A\u4E0E\u672C\u80FD\u7684\u8FB9\u7F18\u53CD\u590D\u62C9\u626F\uFF0C\u5FCD\u7740\u5185\u5FC3\u7684\u7126\u707C\u4FDD\u6301\u514B\u5236\uFF0C\u820D\u4E0D\u5F97\u5FFD\u89C6\u4F60\u7684\u611F\u53D7\u3002\u6781\u5EA6\u7684\u8FF7\u604B\u88AB\u85CF\u5728\u59A5\u5E16\u7684\u76EE\u5149\u91CC\uFF0C\u53EA\u4E3A\u4E86\u8BA9\u4E0B\u4E00\u6B21\u89E6\u78B0\u66F4\u6709\u5206\u91CF\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0033\u0062\u0030\u0034\u0064\u0039\u0062\u0031\u0030\u0032\u0037\u0064\u0031\u0065\u0031\u0031\u0065\u0037\u0034\u0039\u0061\u0038\u0034\u0037\u0062\u0037\u0033\u0039\u0030\u0032\u0066\u0063\u002F\u0031\u0035\u005F\u0044\u0065\u0076\u0069\u006C\u002E\u006A\u0070\u0067"},{"name":"\u9AD8\u5854","pos":"突如其来的感官冲击！那种瞬间引爆的激情会让你们都感到措手不及。你会体验到推倒重建的快感，所有伪装都被撕碎，只剩下最原始的灵魂在火光中纠缠，让关系实现质的飞跃。",'\u006E\u0065\u0067':"\u539F\u672C\u5B8C\u7F8E\u7684\u8BA1\u5212\u88AB\u5F7B\u5E95\u6253\u4E71\uFF0C\u0054\u0041\u987A\u52BF\u5E26\u4F60\u8DCC\u8FDB\u4E86\u66F4\u539F\u59CB\u7684\u8282\u594F\u91CC\u3002\u90A3\u4E9B\u201C\u5C34\u5C2C\u201D\u90FD\u65E0\u5173\u7D27\u8981\uFF0C\u0054\u0041\u6B63\u8D64\u88F8\u5730\u5411\u4F60\u5C55\u793A\u6700\u771F\u5B9E\u7684\u672C\u80FD\u3002\u5728\u8FD9\u573A\u63A8\u5012\u91CD\u5EFA\u7684\u5E9F\u589F\u4E0A\uFF0C\u0054\u0041\u8981\u5E26\u4F60\u9886\u7565\u4E00\u79CD\u4ECE\u672A\u4F53\u9A8C\u8FC7\u7684\u3001\u91CE\u86EE\u751F\u957F\u7684\u5FEB\u611F\u3002","img":"https://p.sda1.dev/30/16c00a89193b91fa35c4991f72736607/16_Tower.jpg"},{"name":"\u661F\u661F",'\u0070\u006F\u0073':"\u5145\u6EE1\u4E86\u5E0C\u671B\u4E0E\u7075\u611F\u7684\u4E92\u52A8\u3002\u0054\u0041\u5E26\u7ED9\u4F60\u7684\u4E0D\u4EC5\u662F\u8EAB\u4F53\u7684\u6170\u85C9\uFF0C\u66F4\u662F\u5FC3\u7075\u7684\u6D17\u6DA4\u3002\u8FD9\u79CD\u7EAF\u7CB9\u5F97\u50CF\u661F\u5149\u4E00\u6837\u7684\u4F53\u9A8C\uFF0C\u4F1A\u8BA9\u4F60\u4EEC\u611F\u53D7\u5230\u4E00\u79CD\u795E\u5723\u7684\u5B89\u5B81\uFF0C\u4EFF\u4F5B\u6574\u4E2A\u5B87\u5B99\u90FD\u4E3A\u4F60\u4EEC\u9759\u6B62\u3002",'\u006E\u0065\u0067':"\u0054\u0041\u89C9\u5F97\u8FD9\u4E00\u523B\u7684\u4F60\u79BB\u0020\u0054\u0041\u0020\u592A\u8FD1\u53C8\u592A\u8FDC\uFF0C\u90A3\u79CD\u89E6\u4E0D\u53EF\u53CA\u7684\u5E7B\u89C9\u8BA9\u0020\u0054\u0041\u0020\u52A0\u91CD\u4E86\u624B\u4E0A\u7684\u529B\u9053\u3002\u0054\u0041\u0020\u5728\u7528\u76F4\u63A5\u7684\u89E6\u78B0\u786E\u8BA4\u4F60\u7684\u5B58\u5728\uFF0C\u60F3\u628A\u865A\u65E0\u7F25\u7F08\u7684\u5E7B\u60F3\u5168\u90E8\u843D\u5B9E\u5230\u4F60\u7684\u76AE\u80A4\u4E0A\u3002\u0054\u0041\u0020\u5728\u62FC\u547D\u8FFD\u8D76\u4F60\u7684\u5149\uFF0C\u60F3\u5728\u5929\u4EAE\u524D\u628A\u4F60\u5F7B\u5E95\u5360\u6709\u3002",'\u0069\u006D\u0067':"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0033\u0032\u0036\u0032\u0031\u0065\u0034\u0031\u0034\u0031\u0066\u0038\u0061\u0036\u0063\u0037\u0063\u0038\u0032\u0064\u0037\u0038\u0064\u0064\u0064\u0039\u0062\u0066\u0030\u0034\u0061\u0063\u002F\u0031\u0037\u005F\u0053\u0074\u0061\u0072\u002E\u006A\u0070\u0067"},{"name":"\u6708\u4EAE",'\u0070\u006F\u0073':"\u66A7\u6627\u6C1B\u56F4\u7684\u5DC5\u5CF0\u3002\u5728\u6726\u80E7\u7684\u706F\u5149\u4E0B\uFF0C\u0054\u0041\u7684\u773C\u795E\u91CC\u85CF\u7740\u5343\u8A00\u4E07\u8BED\u3002\u82E5\u5373\u82E5\u79BB\u7684\u89E6\u78B0\uFF0C\u6FC0\u53D1\u51FA\u4E86\u6700\u6DF1\u5C42\u7684\u6F5C\u610F\u8BC6\u6B32\u671B\uFF0C\u8BA9\u4F60\u4EEC\u5728\u5145\u6EE1\u8BD7\u610F\u7684\u5E7B\u8C61\u4E2D\u5171\u540C\u6C89\u6CA6\uFF0C\u4F53\u9A8C\u4E00\u573A\u5348\u591C\u68A6\u56DE\u822C\u7684\u8FF7\u5E7B\u611F\u3002",'\u006E\u0065\u0067':"挡在中间的朦胧雾气正在散开，TA眼里深不见底的渴求变得清晰。两人的频率正在慢慢重合，藏在暗处的火花，马上就要烧到明面上。TA带着那颗狂跳的心穿过迷雾，只想更直接地触碰到你的温度，把暧昧全部落实成确定。","img":"https://p.sda1.dev/30/876da3fffe6942c448d0c272b4f9554f/18_Moon.jpg"},{"name":"太阳","pos":"充满了阳光般的活力与热情！今晚的一切都是公开、透明且快乐的。TA会用最直白的方式表达对你的赞美，这种热烈的情绪会感染你，让你们在充满自信的互动中，感受到生命最极致的欢愉。",'\u006E\u0065\u0067':"\u0054\u0041\u90A3\u80A1\u8FD1\u4E4E\u707C\u4EBA\u7684\u70ED\u60C5\u7A0D\u5FAE\u6536\u655B\u4E86\u4E00\u4E9B\uFF0C\u4F46\u8FD9\u8BA9\u63A5\u4E0B\u6765\u7684\u6BCF\u4E00\u6B21\u6DF1\u5165\u90FD\u663E\u5F97\u66F4\u6C89\u3001\u66F4\u91CD\u3002\u0054\u0041\u4E0D\u60F3\u53EA\u662F\u4E00\u5473\u5730\u91CA\u653E\uFF0C\u66F4\u60F3\u5728\u6E29\u70ED\u7684\u9ED1\u6697\u91CC\u542C\u6E05\u4F60\u7684\u6BCF\u4E00\u6B21\u5598\u606F\u3002\u5E26\u4E86\u70B9\u9634\u5F71\u7684\u70BD\u70ED\uFF0C\u6B63\u8981\u628A\u4F60\u6574\u4E2A\u4EBA\u90FD\u878D\u8FDB\u8FD9\u80A1\u4F4E\u9891\u7684\u5CA9\u6D46\u91CC\u3002","img":"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0032\u0064\u0038\u0061\u0030\u0062\u0034\u0063\u0039\u0033\u0062\u0039\u0030\u0032\u0061\u0064\u0034\u0061\u0038\u0032\u0036\u0063\u0030\u0036\u0037\u0038\u0031\u0039\u0038\u0031\u0032\u0035\u002F\u0031\u0039\u005F\u0053\u0075\u006E\u002E\u006A\u0070\u0067"},{'\u006E\u0061\u006D\u0065':"\u5BA1\u5224",'\u0070\u006F\u0073':"\u5173\u7CFB\u7684\u91CD\u8981\u8F6C\u6298\u70B9\u3002\u4ECA\u665A\u7684\u76F8\u5904\u4F1A\u8BA9\u4F60\u4EEC\u91CD\u65B0\u8BA4\u8BC6\u5F7C\u6B64\uFF0C\u53D1\u73B0\u90A3\u4E9B\u6DF1\u85CF\u4E0D\u9732\u7684\u95EA\u5149\u70B9\u3002\u8FD9\u662F\u4E00\u79CD\u8D85\u8D8A\u611F\u5B98\u7684\u89C9\u9192\uFF0C\u4F60\u4EEC\u4F1A\u610F\u8BC6\u5230\uFF0C\u5F7C\u6B64\u5C31\u662F\u90A3\u4E2A\u80FD\u8BA9\u81EA\u5DF1\u53D8\u5F97\u66F4\u5B8C\u6574\u7684\u4EBA\u3002","neg":"\u0054\u0041\u6B63\u5728\u4E00\u7247\u7247\u6495\u6389\u8FC7\u5F80\u7684\u65E7\u6807\u7B7E\uFF0C\u60F3\u817E\u51FA\u4E00\u4E2A\u6700\u5E72\u51C0\u7684\u81EA\u5DF1\u3002\u0054\u0041\u4E0D\u60F3\u5E26\u7740\u4EFB\u4F55\u65E7\u53D9\u4E8B\u7684\u7070\u5C18\u89E6\u78B0\u4F60\uFF0C\u524D\u8FDB\u7684\u52A8\u4F5C\u5F88\u6162\u3002\u0054\u0041\u6B63\u5168\u795E\u8D2F\u6CE8\u5730\u6E05\u7406\u6389\u6240\u6709\u6742\u5FF5\uFF0C\u8981\u628A\u6700\u539F\u59CB\u7684\u672C\u80FD\u7559\u7ED9\u8FD9\u4E00\u665A\u3002\u5F53\u0054\u0041\u7EC8\u4E8E\u8DE8\u51FA\u90A3\u4E00\u6B65\uFF0C\u7ED9\u4F60\u7684\u89E6\u78B0\u4F1A\u662F\u524D\u6240\u672A\u6709\u7684\u7B03\u5B9A\u3002","img":"https://p.sda1.dev/30/cf055e3c3435884e949ff593dc361295/20_Judgement.jpg"},{"name":"世界","pos":"圆满。这就是所有亲密关系的终极追求。身、心、灵的完美契合，你们在这一刻合二为一。没有缺憾，没有迟疑，只有无穷无尽的满足感与对未来的坚定信心。","neg":"\u6B64\u523B\u5C0F\u6EE1\u80DC\u4E07\u5168\u3002\u5C1A\u672A\u586B\u6EE1\u7684\u95F4\u9699\uFF0C\u6210\u4E86\u4F60\u4EEC\u95F4\u53CD\u590D\u62C9\u626F\u7684\u94A9\u5B50\u3002\u751F\u6DA9\u548C\u7F3A\u61BE\u5F15\u8BF1\u7740\u4F60\u4EEC\u4E00\u6B21\u6B21\u9760\u8FD1\uFF0C\u53BB\u586B\u8865\uFF0C\u53BB\u63A2\u7D22\u3002\u6BD4\u8D77\u5168\u7CD6\u7684\u76F4\u767D\u7684\u751C\u871C\uFF0C\u90A3\u53E3\u672A\u8A00\u7684\u9178\u6DA9\u624D\u662F\u4F60\u4EEC\u5FF5\u5FF5\u4E0D\u5FD8\u7684\u4F59\u97F5\u3002","img":"\u0068\u0074\u0074\u0070\u0073\u003A\u002F\u002F\u0070\u002E\u0073\u0064\u0061\u0031\u002E\u0064\u0065\u0076\u002F\u0033\u0030\u002F\u0063\u0065\u0030\u0036\u0033\u0039\u0063\u0066\u0033\u0063\u0062\u0066\u0037\u0061\u0064\u0031\u0030\u0032\u0063\u0036\u0064\u0034\u0035\u0035\u0061\u0064\u0038\u0031\u0032\u0062\u0035\u0033\u002F\u0032\u0031\u005F\u0057\u006F\u0072\u006C\u0064\u002E\u006A\u0070\u0067"}];_0xd18de=(464915^464917)+(690744^690747);;const questions=["\uFF1F\u4F60\u6709\u5360\u6837\u600E\u60F3\u523B\u6B64AT".split("").reverse().join(""),"\u8FD9\u9897\u7981\u679C\u7684\u751C\u5EA6\u4E0E\u5371\u9669\uFF1F","\u6F5C\u610F\u8BC6\u91CC\u0054\u0041\u5BF9\u4F60\u7684\u6E34\u6C42\uFF1F","\u8C01\u5728\u64CD\u63A7\u8FD9\u573A\u6C89\u6CA6\u7684\u8282\u594F\uFF1F","\uFF1F\u5EA6\u5408\u5951\u7406\u751F\u7684\u4EEC\u4F60".split("").reverse().join(""),"\uFF1F\u60F3\u5E7B\u7684\u53E3\u51FA\u8BF4\u66FE\u672AAT\u4E9B\u90A3".split("").reverse().join(""),"\u0054\u0041\u662F\u5426\u4F1A\u4E3A\u4F60\u5931\u63A7\uFF1F","\uFF1F\u68B0\u7F34\u5E95\u5F7BAT\u8BA9\u4E48\u4EC0\u662F".split("").reverse().join(""),"\u4E0B\u4E00\u6B21\u82F9\u679C\u7684\u9884\u544A\uFF1F","\u0054\u0041\u54C1\u5C1D\u65F6\u7684\u7656\u597D\uFF1F","\uFF1F\u97F5\u4F59\u5B58\u6E29\u7684\u540E\u53BB\u9000\u6C50\u6F6E".split("").reverse().join(""),"\uFF1F\u6DF1\u591A\u6709\u7ADF\u7A76\u6B32\u6709\u5360\u7684AT".split("").reverse().join("")];const labels=["\u679C\u6838","\u8BF1\u5F15".split("").reverse().join(""),"\u541E\u566C"];let selectedCards=[];let cardPool=[...tarotData];var _0x4g2d3e=(745641^745640)+(998014^998013);let selectedQuestion="";_0x4g2d3e="aallmp".split("").reverse().join("");const qGrid=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("dirGq".split("").reverse().join(""));questions['\u0066\u006F\u0072\u0045\u0061\u0063\u0068'](q=>{const item=document['\u0063\u0072\u0065\u0061\u0074\u0065\u0045\u006C\u0065\u006D\u0065\u006E\u0074']("vid".split("").reverse().join(""));item['\u0063\u006C\u0061\u0073\u0073\u004E\u0061\u006D\u0065']="meti-noitseuq".split("").reverse().join("");item['\u0074\u0065\u0078\u0074\u0043\u006F\u006E\u0074\u0065\u006E\u0074']=q;item['\u006F\u006E\u0063\u006C\u0069\u0063\u006B']=()=>{document['\u0071\u0075\u0065\u0072\u0079\u0053\u0065\u006C\u0065\u0063\u0074\u006F\u0072\u0041\u006C\u006C']("meti-noitseuq.".split("").reverse().join(""))['\u0066\u006F\u0072\u0045\u0061\u0063\u0068'](i=>i['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0072\u0065\u006D\u006F\u0076\u0065']("\u0073\u0065\u006C\u0065\u0063\u0074\u0065\u0064"));item['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("detceles".split("").reverse().join(""));selectedQuestion=q;document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0061\u0072\u0074\u0042\u0074\u006E")['\u0073\u0074\u0079\u006C\u0065']['\u0064\u0069\u0073\u0070\u006C\u0061\u0079']="kcolb".split("").reverse().join("");};qGrid['\u0061\u0070\u0070\u0065\u006E\u0064\u0043\u0068\u0069\u006C\u0064'](item);});function startExperience(){var _0xba_0xg19=(419224^419231)+(292043^292045);const _0xd788g=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("yalrevo".split("").reverse().join(""));_0xba_0xg19=(958120^958122)+(950990^950985);_0xd788g['\u0073\u0074\u0079\u006C\u0065']['\u0074\u0072\u0061\u006E\u0073\u0069\u0074\u0069\u006F\u006E']="\u006F\u0070\u0061\u0063\u0069\u0074\u0079\u0020\u0032\u0073";_0xd788g['\u0073\u0074\u0079\u006C\u0065']['\u006F\u0070\u0061\u0063\u0069\u0074\u0079']="\u0030";setTimeout(()=>{_0xd788g['\u0073\u0074\u0079\u006C\u0065']['\u0064\u0069\u0073\u0070\u006C\u0061\u0079']="enon".split("").reverse().join("");document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0065\u0070\u0031")['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("evitca".split("").reverse().join(""));},657155^655571);}function goToStep2(){document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0065\u0070\u0031")['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']='';const _0xbec85a=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("redaolerp".split("").reverse().join(""));_0xbec85a['\u0073\u0074\u0079\u006C\u0065']['\u0064\u0069\u0073\u0070\u006C\u0061\u0079']="\u0066\u006C\u0065\u0078";_0xbec85a['\u0073\u0074\u0079\u006C\u0065']['\u006F\u0070\u0061\u0063\u0069\u0074\u0079']="\u0031";document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("1pets".split("").reverse().join(""))['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0072\u0065\u006D\u006F\u0076\u0065']("evitca".split("").reverse().join(""));document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0065\u0070\u0032")['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("evitca".split("").reverse().join(""));setTimeout(()=>{_0xbec85a['\u0073\u0074\u0079\u006C\u0065']['\u0074\u0072\u0061\u006E\u0073\u0069\u0074\u0069\u006F\u006E']="\u006F\u0070\u0061\u0063\u0069\u0074\u0079\u0020\u0031\u002E\u0035\u0073";_0xbec85a['\u0073\u0074\u0079\u006C\u0065']['\u006F\u0070\u0061\u0063\u0069\u0074\u0079']="\u0030";setTimeout(()=>{_0xbec85a['\u0073\u0074\u0079\u006C\u0065']['\u0064\u0069\u0073\u0070\u006C\u0061\u0079']="\u006E\u006F\u006E\u0065";document['\u0071\u0075\u0065\u0072\u0079\u0053\u0065\u006C\u0065\u0063\u0074\u006F\u0072']("\u002E\u0063\u0061\u0072\u0064\u002D\u0066\u0061\u006E")['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("\u0073\u0068\u0075\u0066\u0066\u006C\u0069\u006E\u0067");var _0x_0x49c=(188611^188613)+(862985^862986);const _0x9fg9d="\u8BF7\u6DF1\u547C\u5438\uFF0C\u4E13\u6CE8\u60F3\u7740\u4F60\u7684\u95EE\u9898";_0x_0x49c=(296022^296019)+(981265^981267);const _0x42a2b="\u5361\u724C\u5F20\u4E09\u53D6\u62BD\u540E\u968F".split("").reverse().join("");var _0x07be=(191721^191726)+(525706^525710);const _0x7c9ad=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("1enil".split("").reverse().join(""));_0x07be=410945^410945;var _0xc9a=(559601^559600)+(267459^267463);const _0x6814d=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u006C\u0069\u006E\u0065\u0032");_0xc9a="djllfm".split("").reverse().join("");_0x7c9ad['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']='';_0x6814d['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']='';_0x9fg9d['\u0073\u0070\u006C\u0069\u0074']('')['\u0066\u006F\u0072\u0045\u0061\u0063\u0068']((char,i)=>{const span=document['\u0063\u0072\u0065\u0061\u0074\u0065\u0045\u006C\u0065\u006D\u0065\u006E\u0074']("naps".split("").reverse().join(""));span['\u0063\u006C\u0061\u0073\u0073\u004E\u0061\u006D\u0065']="rahc".split("").reverse().join("");span['\u0074\u0065\u0078\u0074\u0043\u006F\u006E\u0074\u0065\u006E\u0074']=char;span['\u0073\u0074\u0079\u006C\u0065']['\u0061\u006E\u0069\u006D\u0061\u0074\u0069\u006F\u006E\u0044\u0065\u006C\u0061\u0079']=`${i*0.1}s`;_0x7c9ad['\u0061\u0070\u0070\u0065\u006E\u0064\u0043\u0068\u0069\u006C\u0064'](span);});_0x42a2b['\u0073\u0070\u006C\u0069\u0074']('')['\u0066\u006F\u0072\u0045\u0061\u0063\u0068']((char,i)=>{const span=document['\u0063\u0072\u0065\u0061\u0074\u0065\u0045\u006C\u0065\u006D\u0065\u006E\u0074']("\u0073\u0070\u0061\u006E");span['\u0063\u006C\u0061\u0073\u0073\u004E\u0061\u006D\u0065']="\u0063\u0068\u0061\u0072";span['\u0074\u0065\u0078\u0074\u0043\u006F\u006E\u0074\u0065\u006E\u0074']=char;span['\u0073\u0074\u0079\u006C\u0065']['\u0061\u006E\u0069\u006D\u0061\u0074\u0069\u006F\u006E\u0044\u0065\u006C\u0061\u0079']=`${_0x9fg9d['\u006C\u0065\u006E\u0067\u0074\u0068']*0.1+i*0.1}s`;_0x6814d['\u0061\u0070\u0070\u0065\u006E\u0064\u0043\u0068\u0069\u006C\u0064'](span);});},169969^168493);},879040^879644);}661911^661855;let isDrawing=false;function drawOneCard(){if(isDrawing||selectedCards['\u006C\u0065\u006E\u0067\u0074\u0068']>=(521689^521690))return;isDrawing=!![];const _0xebf=Math['\u0066\u006C\u006F\u006F\u0072'](Math['\u0072\u0061\u006E\u0064\u006F\u006D']()*cardPool['\u006C\u0065\u006E\u0067\u0074\u0068']);const _0xbbc=cardPool['\u0073\u0070\u006C\u0069\u0063\u0065'](_0xebf,895803^895802)[155363^155363];var _0x10840d=(521073^521076)+(712154^712158);const _0x3ffb=Math['\u0072\u0061\u006E\u0064\u006F\u006D']()>0.5;_0x10840d='\u0068\u006F\u0066\u0064\u006C\u0068';selectedCards['\u0070\u0075\u0073\u0068']({..._0xbbc,"isReversed":_0x3ffb});var _0xaf62b;const _0x61a5d=selectedCards['\u006C\u0065\u006E\u0067\u0074\u0068'];_0xaf62b=(780281^780280)+(508967^508963);setTimeout(()=>{document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0063\u006F\u0075\u006E\u0074")['\u0074\u0065\u0078\u0074\u0043\u006F\u006E\u0074\u0065\u006E\u0074']=_0x61a5d;document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("tols".split("").reverse().join("")+(_0x61a5d-(923867^923866)))['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("\u0066\u0069\u006C\u006C\u0065\u0064");setTimeout(()=>{isDrawing=false;},865106^864370);if(selectedCards['\u006C\u0065\u006E\u0067\u0074\u0068']===(771195^771192)){setTimeout(showResult,779822^778910);}},934453^934653);}function showResult(){document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0065\u0070\u0032")['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0072\u0065\u006D\u006F\u0076\u0065']("evitca".split("").reverse().join(""));document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0074\u0065\u0070\u0033")['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("\u0061\u0063\u0074\u0069\u0076\u0065");document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0071\u0075\u0065\u0073\u0074\u0069\u006F\u006E\u0045\u0063\u0068\u006F")['\u0074\u0065\u0078\u0074\u0043\u006F\u006E\u0074\u0065\u006E\u0074']="\u95EE\u9898\uFF1A\u0020"+selectedQuestion;const _0xab3c=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0072\u0065\u0073\u0075\u006C\u0074\u0043\u0061\u0072\u0064\u0073");var _0x0990c;const _0x493g=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0069\u006E\u0074\u0065\u0072\u0070\u0072\u0065\u0074\u0061\u0074\u0069\u006F\u006E");_0x0990c=(219222^219219)+(717899^717896);_0xab3c['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']='';_0x493g['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']='';selectedCards['\u0066\u006F\u0072\u0045\u0061\u0063\u0068']((card,i)=>{var _0x416eec=(158190^158189)+(262861^262863);const _0xe5a6ag=card['\u0069\u0073\u0052\u0065\u0076\u0065\u0072\u0073\u0065\u0064']?"\u9006\u4F4D":"\u6B63\u4F4D";_0x416eec="figebq".split("").reverse().join("");var _0xda_0x68d;const _0xe41d=card['\u0069\u0073\u0052\u0065\u0076\u0065\u0072\u0073\u0065\u0064']?card['\u006E\u0065\u0067']:card['\u0070\u006F\u0073'];_0xda_0x68d="jflfba".split("").reverse().join("");var _0x1da=(322140^322141)+(672461^672457);const _0x96e39f=card['\u0069\u0073\u0052\u0065\u0076\u0065\u0072\u0073\u0065\u0064']?"\u0074\u0072\u0061\u006E\u0073\u0066\u006F\u0072\u006D\u003A\u0020\u0072\u006F\u0074\u0061\u0074\u0065\u0028\u0031\u0038\u0030\u0064\u0065\u0067\u0029\u003B":"";_0x1da=407028^407025;_0xab3c['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']+=`
+                <div class="card-box" style="opacity:0; animation: fadeIn 0.5s forwards ${i*0.4}s">
+                    <img src="${card['\u0069\u006D\u0067']}" class="card-img" style="${_0x96e39f}">
+                    <div class="card-label" style="font-size:11px;">${labels[i]}<br>${card['\u006E\u0061\u006D\u0065']}(${_0xe5a6ag})</div>
+                </div>`;_0x493g['\u0069\u006E\u006E\u0065\u0072\u0048\u0054\u004D\u004C']+=`
+                <div class="interp-item">
+                    <div class="interp-title">${labels[i]}：${card['\u006E\u0061\u006D\u0065']} (${_0xe5a6ag})</div>
+                    <div class="interp-text" id="text-${i}">${_0xe41d}</div>
+                </div>`;setTimeout(()=>{var _0x494db;const _0x5ae9bc=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064'](`text-${i}`);_0x494db=(756096^756097)+(299167^299160);if(_0x5ae9bc)_0x5ae9bc['\u0063\u006C\u0061\u0073\u0073\u004C\u0069\u0073\u0074']['\u0061\u0064\u0064']("\u0073\u0068\u006F\u0077");},(428551^428327)+i*(354976^355856));});setTimeout(()=>{const _0xbafd5f=generateSummary(selectedCards);const _0x2f6bb=`
+                <div id="summary-box" style="opacity:0; transition: opacity 1s; background:rgba(197, 160, 89, 0.1); padding:20px; border-radius:8px; margin-top:20px; border:1px dashed var(--gold-accent);">
+                    <span style="display:inline-block; background:var(--gold-accent); color:#000; padding:2px 12px; border-radius:2px; font-size:17px; margin-bottom:10px; font-weight:bold;">🔮 综合解读：${_0xbafd5f['\u0074\u0069\u0074\u006C\u0065']}</span>
+                    <p class="interp-text show" style="color:var(--text-main); margin:0; opacity:0.9;">${_0xbafd5f['\u0063\u006F\u006E\u0074\u0065\u006E\u0074']}</p>
+                    <div style="text-align:right; font-size:10px; color:var(--gold-accent); opacity:0.5; margin-top:10px;">— 一粒宇宙 —</div>
+                </div>`;_0x493g['\u0069\u006E\u0073\u0065\u0072\u0074\u0041\u0064\u006A\u0061\u0063\u0065\u006E\u0074\u0048\u0054\u004D\u004C']("dneerofeb".split("").reverse().join(""),_0x2f6bb);setTimeout(()=>{const _0x9f179b=document['\u0067\u0065\u0074\u0045\u006C\u0065\u006D\u0065\u006E\u0074\u0042\u0079\u0049\u0064']("\u0073\u0075\u006D\u006D\u0061\u0072\u0079\u002D\u0062\u006F\u0078");if(_0x9f179b)_0x9f179b['\u0073\u0074\u0079\u006C\u0065']['\u006F\u0070\u0061\u0063\u0069\u0074\u0079']="\u0031";},239430^239394);},462292^465984);}function generateSummary(cards){const _0x4fa7ce=cards['\u0066\u0069\u006C\u0074\u0065\u0072'](c=>c['\u0069\u0073\u0052\u0065\u0076\u0065\u0072\u0073\u0065\u0064'])['\u006C\u0065\u006E\u0067\u0074\u0068'];var _0x8dff6e=(516511^516508)+(389153^389155);const _0xg81a4g=cards['\u006D\u0061\u0070'](c=>c['\u006E\u0061\u006D\u0065']);_0x8dff6e=(929489^929493)+(411577^411578);if(_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u9B54\u6076".split("").reverse().join(""))||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u5854\u9AD8".split("").reverse().join(""))||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u6B7B\u795E")){return{'\u0074\u0069\u0074\u006C\u0065':"\u3010\u5931\u63A7\u8FB9\u7F18\u3011","content":"TA现在的理智已经彻底断了线。脑子里全是把你按倒、撕开、彻底占有的画面。这种压抑后的爆发极其凶狠，TA不再考虑你会不会疼，只想听你最直接的喘息，看你求饶或者迎合的样子。这不再是一场温柔的博弈，而是一次野蛮的掠夺。TA要撞碎你们之间所有的隔阂，在汗水和失控里把你揉进骨子里，让你今晚除了TA的名字，什么都想不起来。"};}if(_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u4E16\u754C")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u604B\u4EBA")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u592A\u9633")){return{"title":"\u3010\u5F7B\u5E95\u5951\u5408\u3011",'\u0063\u006F\u006E\u0074\u0065\u006E\u0074':"这就是你想要的那种感觉。TA完全对齐了你的频率，每一次深入和撤退都精准得让你想流泪。你们的体温在纠缠中升高，汗水混在一起，分不清谁是谁。TA不仅想吃掉你的身体，更想在这一刻和你合二为一。不需要多余的话，每一个吻、每一次撞击都在说TA有多爱你。这是一种全身心被填满的饱胀感，你们在彼此的身体里找到了最深的归属，世界在这一刻只剩下你们的呼吸。"};}if(_0x4fa7ce===(671500^671503)){return{'\u0074\u0069\u0074\u006C\u0065':"【暗火焚身】",'\u0063\u006F\u006E\u0074\u0065\u006E\u0074':"TA在忍。手上的青筋都爆出来了，却还在死死掐着最后一点自制力。TA表现得越是克制、越是退让，内心的火就烧得越旺。TA不敢轻易动你，是因为怕一碰就彻底疯掉，怕把你弄坏。这种慢节奏的折磨其实是TA给你的前戏，TA在等一个契机，等那一刻彻底爆发时，会带给你最猛烈的冲击。别急着催TA，这种憋到极致后的爆发，才会让你领略到什么是真正的没顶之灾。"};}if(_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u7687\u5E1D")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u6559\u7687")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u8F66\u6218".split("").reverse().join(""))){return{'\u0074\u0069\u0074\u006C\u0065':"\u3010\u5F3A\u52BF\u5360\u6709\u3011","content":"TA要绝对的主导权。今晚你是TA的猎物，必须按照TA的节奏来。TA会按住你的手腕，锁住你的目光，让你只能感受到TA的力量和存在。这种霸道是不容拒绝的，TA享受看你在TA身下战栗、求饶的样子。TA的动作很重、很稳，要把每一寸领土都标记上TA的印记。你不需要思考，只需要交出身体，感受这种被强者完全支配、被紧紧锁定的安全感与刺激感。TA会让你知道谁才是这里的主人。"};}if(_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u6708\u4EAE")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u661F\u661F")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u5973\u6559\u7687")){return{'\u0074\u0069\u0074\u006C\u0065':"\u3010\u6E7F\u51B7\u7EA0\u7F20\u3011",'\u0063\u006F\u006E\u0074\u0065\u006E\u0074':"\u6C1B\u56F4\u5728\u6726\u80E7\u4E2D\u53D8\u5F97\u6F6E\u6E7F\u3002\u0054\u0041\u7684\u773C\u795E\u91CC\u5168\u662F\u85CF\u4E0D\u4F4F\u7684\u6E34\u671B\uFF0C\u624B\u4E0A\u7684\u89E6\u78B0\u82E5\u5373\u82E5\u79BB\uFF0C\u6BCF\u4E00\u5904\u88AB\u0054\u0041\u6478\u8FC7\u7684\u5730\u65B9\u90FD\u50CF\u5728\u7740\u706B\u3002\u8FD9\u79CD\u62C9\u626F\u611F\u6700\u8BA9\u4EBA\u53D7\u4E0D\u4E86\u3002\u0054\u0041\u5728\u7528\u8FD9\u79CD\u6162\u5200\u5B50\u5272\u8089\u7684\u65B9\u5F0F\u6298\u78E8\u4F60\uFF0C\u4E5F\u5728\u6298\u78E8\u81EA\u5DF1\u3002\u0054\u0041\u60F3\u770B\u4F60\u5148\u53D7\u4E0D\u4E86\u3001\u5148\u5F00\u53E3\u8981\u3002\u7A7A\u6C14\u91CC\u5168\u662F\u66A7\u6627\u7684\u751C\u817B\u5473\uFF0C\u0054\u0041\u7684\u6BCF\u4E00\u6B21\u547C\u5438\u90FD\u6251\u5728\u4F60\u9888\u7A9D\u91CC\uFF0C\u5F04\u5F97\u4F60\u6D51\u8EAB\u53D1\u8F6F\u3002\u4ECA\u665A\u662F\u4E00\u573A\u5173\u4E8E\u611F\u5B98\u7684\u6DF1\u5EA6\u6C89\u6CA6\uFF0C\u0054\u0041\u8981\u5E26\u4F60\u8FDB\u4E00\u4E2A\u53EA\u6709\u4F53\u6E29\u548C\u68A6\u5883\u7684\u8FF7\u96FE\u68EE\u6797\uFF0C\u6162\u6162\u628A\u4F60\u5403\u5E72\u62B9\u51C0\u3002"};}if(_0x4fa7ce===(503946^503946)){return{"title":"【炽热狂欢】",'\u0063\u006F\u006E\u0074\u0065\u006E\u0074':"\u0054\u0041\u76F4\u63A5\u5F97\u8BA9\u4F60\u5FC3\u60CA\u3002\u6CA1\u6709\u8BD5\u63A2\uFF0C\u6CA1\u6709\u4F2A\u88C5\uFF0C\u0054\u0041\u773C\u91CC\u7684\u706B\u6068\u4E0D\u5F97\u628A\u4F60\u70E7\u5316\u4E86\u3002\u0054\u0041\u5BF9\u4F60\u7684\u6E34\u6C42\u662F\u8D64\u88F8\u88F8\u7684\uFF0C\u6BCF\u4E00\u4E2A\u52A8\u4F5C\u90FD\u5199\u6EE1\u4E86\u2018\u6211\u8981\u4F60\u2019\u3002\u8FD9\u79CD\u70ED\u70C8\u7684\u60C5\u7EEA\u4F1A\u77AC\u95F4\u70B9\u71C3\u4F60\uFF0C\u8BA9\u4F60\u4EEC\u5728\u6700\u539F\u59CB\u7684\u672C\u80FD\u91CC\u75AF\u72C2\u3002\u0054\u0041\u4F1A\u8D5E\u7F8E\u4F60\u7684\u6BCF\u4E00\u5BF8\u76AE\u80A4\uFF0C\u54AC\u4F60\u7684\u80A9\u8180\uFF0C\u542C\u4F60\u5927\u58F0\u53EB\u51FA\u6765\u3002\u8FD9\u662F\u4E00\u573A\u6700\u7EAF\u7CB9\u7684\u611F\u5B98\u76DB\u5BB4\uFF0C\u4E0D\u9700\u8981\u906E\u63A9\uFF0C\u53EA\u6709\u6700\u771F\u5B9E\u7684\u529B\u9053\u548C\u6700\u6EDA\u70EB\u7684\u6E29\u5EA6\u3002\u4ECA\u665A\uFF0C\u0054\u0041\u8981\u548C\u4F60\u4E00\u8D77\u70E7\u5230\u5929\u4EAE\uFF0C\u91CA\u653E\u6389\u6240\u6709\u7684\u751F\u547D\u529B\u3002"};}if(_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u611A\u8005")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u9B54\u672F\u5E08")||_0xg81a4g['\u0069\u006E\u0063\u006C\u0075\u0064\u0065\u0073']("\u547D\u8FD0\u4E4B\u8F6E")){return{"title":"\u3010\u65B0\u9C9C\u6E38\u620F\u3011","content":"TA脑子里全是坏主意。今晚TA会带你尝试各种没玩过的花样，让你在惊喜和惊吓边缘反复跳跃。TA很擅长调动你的情绪，一会儿温柔得像水，一会儿又坏得让你咬牙切齿。TA想看你意想不到的反应，看你被TA弄得不知所措。这种探索过程充满刺激，你永远猜不到TA下一步会摸哪里、会用什么姿势。保持你的好奇心，把身体交给TA，让TA带你领略这场充满了变数和趣味的感官大冒险。"};}return{'\u0074\u0069\u0074\u006C\u0065':"\u3010\u5FAE\u91BA\u4FB5\u5165\u3011",'\u0063\u006F\u006E\u0074\u0065\u006E\u0074':"今晚像是一场后劲极强的宿醉。TA在温柔和狠戾之间反复横跳，弄得你完全摸不清头脑。TA会先轻声细语地哄你，然后在你放松警惕时猛地深入，让你瞬间失神。这种节奏的切换最有杀伤力，让你的身体始终保持在一种高敏状态。TA在寻找那个能让你瞬间崩掉的点，一下一下地试探、磨人。这种拉扯最磨人也最带劲，你会在这场漫长的品尝里，一点点被TA瓦解掉所有的理智，最后只能随着TA起伏。"};}
+</script>
+<footer style="margin-top: 50px; padding: 20px; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); width: 80%; max-width: 500px;">
+    <p style="font-family: 'STSong', 'SimSun', serif; font-size: 11px; color: rgba(197, 160, 89, 0.4); line-height: 1.8; letter-spacing: 1px;">
+        版权声明：本仪式由 <strong style="color: rgba(197, 160, 89, 0.6);">一粒宇宙</strong> 策划呈现。<br>
+        尊重原创，严禁未经授权的商业搬运、洗稿、非授权传播。<br>
+    
+        </span>
+    </p>
+</footer>
+</body>
+</html>
